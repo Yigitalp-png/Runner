@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Runner - Fullscreen</title>
+
+<style>
+  html,body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#0f1115;
+    font-family:system-ui;
+  }
+
+  #hud{
+    position:fixed;
+    top:10px;
+    left:15px;
+    color:#fff;
+    z-index:10;
+    font-size:18px;
+    font-weight:900;
+    text-shadow:0 0 6px #000;
+  }
+
+  #footer{
+    position:fixed;
+    right:10px;
+    bottom:10px;
+    color:#fff;
+    opacity:0.45;
+    font-size:13px;
+    font-weight:700;
+    z-index:10;
+  }
+
+  #restartBtn, #modsBtn{
+    position:fixed;
+    top:10px;
+    background:#fff2;
+    color:#fff;
+    border:1px solid #fff4;
+    padding:8px 12px;
+    border-radius:10px;
+    font-weight:900;
+    z-index:10;
+    cursor:pointer;
+  }
+
+  #restartBtn{ right:10px; }
+  #modsBtn{ right:108px; }
+
+  canvas{
+    position:fixed;
+    top:0; left:0;
+    width:100vw;
+    height:100vh;
+    touch-action:none;
+  }
+
+  /* ============================
+       MOD MENÜ PANELİ TASARIMI
+     ============================ */
+  #cheatPanel{
+    position:fixed;
+    right:12px;
+    bottom:48px;
+    width:310px;
+    padding:12px;
+    border-radius:14px;
+    background:#0b1220ee;
+    border:1px solid #ffffff22;
+    color:#fff;
+    z-index:9999;
+    display:none;
+    box-shadow:0 10px 30px #00000055;
+    backdrop-filter: blur(6px);
+  }
+
+  #cheatPanel button{
+    padding:8px 10px;
+    border-radius:12px;
+    border:1px solid #fff3;
+    background:#fff1;
+    color:#fff;
+    font-weight:900;
+    cursor:pointer;
+  }
+
+  #cheatPanel input[type="range"]{
+    width:170px;
+  }
+
+  #cheatPanel input[type="color"]{
+    width:44px;
+    height:30px;
+    border:none;
+    background:transparent;
+    padding:0;
+  }
+
+  #cheatTitle{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  #cheatGrid{
+    margin-top:10px;
+    display:grid;
+    gap:10px;
+    font-size:14px;
+  }
+
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .btnRow{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  .small{
+    opacity:.75;
+    font-size:12px;
+    line-height:1.3;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="hud">Skor: 0<br>Coin: 0</div>
+<div id="footer">By Yiğit Alp</div>
+
+<button id="modsBtn">Mod Menüsü</button>
+<button id="restartBtn">Yeniden</button>
+
+<canvas id="c"></canvas>
+
+<!-- ============================
+     MOD MENÜSÜ HTML YAPISI
+     ============================ -->
+<div id="cheatPanel">
+  <div id="cheatTitle">
+    <b>Mod Menüsü</b>
+    <button id="cheatClose">Kapat</button>
+  </div>
+
+  <div id="cheatGrid">
+
+    <div class="row">
+      <span>Ölümsüz</span>
+      <input id="chInvul" type="checkbox">
+    </div>
+
+    <div class="row">
+      <span>Hız Çarpanı</span>
+      <input id="chSpeed" type="range" min="0.5" max="3" step="0.1" value="1">
+    </div>
+    <div class="small">x<span id="chSpeedVal">1.0</span></div>
+
+    <div class="btnRow">
+      <button id="chAddCoin" style="flex:1;min-width:120px;">+100 Coin</button>
+      <button id="chAddScore" style="flex:1;min-width:120px;">+5000 Skor</button>
+    </div>
+
+    <div class="row">
+      <span>Spawn Azalt</span>
+      <input id="chEasy" type="checkbox">
+    </div>
+
+    <hr style="border-color:#ffffff22">
+
+    <b>Renk Modu</b>
+
+    <div class="row">
+      <span>Arka plan</span>
+      <input id="colBg" type="color" value="#0b0d12">
+    </div>
+
+    <div class="row">
+      <span>Şerit çizgisi</span>
+      <input id="colLane" type="color" value="#7b8aa6">
+    </div>
+
+    <div class="row">
+      <span>Oyuncu</span>
+      <input id="colPlayer" type="color" value="#4aa3ff">
+    </div>
+
+    <div class="row">
+      <span>Engel</span>
+      <input id="colObs" type="color" value="#ff4d4d">
+    </div>
+
+    <div class="row">
+      <span>Coin</span>
+      <input id="colCoin" type="color" value="#ffd24a">
+    </div>
+
+    <div class="btnRow">
+      <button id="themeDefault" style="flex:1;">Default</button>
+      <button id="themeNeon" style="flex:1;">Neon</button>
+      <button id="themeDark" style="flex:1;">Dark</button>
+    </div>
+
+    <hr style="border-color:#ffffff22">
+
+    <button id="chInstantWin" style="width:100%;background:#f59e0b33;">
+      Instant Win
+    </button>
+
+    <div class="small">
+      Mod menüsü her açılışta şifre ister.<br>
+      Hilesiz kazanma: 500.000 puan.
+    </div>
+
+  </div>
+</div><script>
+(()=>{
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  let W = canvas.width, H = canvas.height;
+  const laneX = ()=>[W*0.28, W*0.50, W*0.72];
+  const groundY = ()=>H*0.82;
+
+  // === PLAYER ===
+  const player = {
+    lane: 1,
+    x: 0,
+    y: 0,
+    w: 40,
+    h: 58,
+    vy: 0,
+    onGround: true,
+    slideT: 0
+  };
+
+  let running = true;
+  let won = false;
+
+  let score = 0;
+  let coins = 0;
+  let t = 0;
+  let spawnT = 0;
+  let baseSpeed = 6;
+
+  const obs = [];
+  const pick = [];
+
+  // hilesiz kazanma için: herhangi bir mod kullanıldı mı?
+  let modsUsed = false;
+
+  function resetPlayer(){
+    W = canvas.width; H = canvas.height;
+    player.lane = 1;
+    player.x = laneX()[1];
+    player.y = groundY();
+    player.vy = 0;
+    player.onGround = true;
+    player.slideT = 0;
+  }
+  resetPlayer();
+
+  function setWon(isInstant=false){
+    running = false;
+    won = true;
+    if(isInstant) modsUsed = true;
+  }
+
+  // === MOD MENU ===
+  const MOD_PASSWORD = "123409";
+
+  const mods = {
+    invul:false,
+    speedMul:1.0,
+    easySpawn:false
+  };
+
+  const DEFAULT_THEME = {
+    bg:"#0b0d12",
+    lane:"#7b8aa6",
+    player:"#4aa3ff",
+    obs:"#ff4d4d",
+    coin:"#ffd24a"
+  };
+  const NEON_THEME = {
+    bg:"#05060a",
+    lane:"#00f5ff",
+    player:"#a855f7",
+    obs:"#22c55e",
+    coin:"#f97316"
+  };
+  const DARK_THEME = {
+    bg:"#070a12",
+    lane:"#6b7280",
+    player:"#e5e7eb",
+    obs:"#ef4444",
+    coin:"#fbbf24"
+  };
+
+  const theme = {...DEFAULT_THEME};
+
+  function applyTheme(t, markUsed=true){
+    theme.bg=t.bg;
+    theme.lane=t.lane;
+    theme.player=t.player;
+    theme.obs=t.obs;
+    theme.coin=t.coin;
+
+    // inputları güncelle
+    colBg.value=theme.bg;
+    colLane.value=theme.lane;
+    colPlayer.value=theme.player;
+    colObs.value=theme.obs;
+    colCoin.value=theme.coin;
+
+    if(markUsed) modsUsed=true;
+  }
+
+  // === MOD MENU UI ===
+  const panel = document.getElementById("cheatPanel");
+  const modsBtn = document.getElementById("modsBtn");
+  const closeBtn = document.getElementById("cheatClose");
+
+  const chInvul = document.getElementById("chInvul");
+  const chSpeed = document.getElementById("chSpeed");
+  const chSpeedVal = document.getElementById("chSpeedVal");
+  const chAddCoin = document.getElementById("chAddCoin");
+  const chAddScore = document.getElementById("chAddScore");
+  const chEasy = document.getElementById("chEasy");
+  const chInstantWin = document.getElementById("chInstantWin");
+
+  const colBg = document.getElementById("colBg");
+  const colLane = document.getElementById("colLane");
+  const colPlayer = document.getElementById("colPlayer");
+  const colObs = document.getElementById("colObs");
+  const colCoin = document.getElementById("colCoin");
+
+  const themeDefault = document.getElementById("themeDefault");
+  const themeNeon = document.getElementById("themeNeon");
+  const themeDark = document.getElementById("themeDark");
+
+  function syncModUI(){
+    chInvul.checked = mods.invul;
+    chEasy.checked  = mods.easySpawn;
+    chSpeed.value   = String(mods.speedMul);
+    chSpeedVal.textContent = Number(mods.speedMul).toFixed(1);
+
+    colBg.value=theme.bg;
+    colLane.value=theme.lane;
+    colPlayer.value=theme.player;
+    colObs.value=theme.obs;
+    colCoin.value=theme.coin;
+  }
+
+  // === ŞİFRE: 1 dakikada 1 kere ===
+  let lastPasswordTime = 0; // ms
+
+  function askPasswordTimed(){
+    const now = Date.now();
+    if(now - lastPasswordTime < 60000) return true; // 60sn dolmadı
+
+    const p = prompt("Mod Menüsü Şifresi:");
+    if(p === MOD_PASSWORD){
+      lastPasswordTime = now;
+      return true;
+    }
+    return false;
+  }
+
+  function openMods(){
+    if(!askPasswordTimed()) return;
+    syncModUI();
+    panel.style.display="block";
+    modsBtn.textContent="Mod Menüsü (Açık)";
+  }
+
+  function closeMods(){
+    panel.style.display="none";
+    modsBtn.textContent="Mod Menüsü";
+  }
+
+  modsBtn.onclick = ()=> panel.style.display==="block" ? closeMods() : openMods();
+  closeBtn.onclick = closeMods;
+
+  // === MOD ACTIONS ===
+  chInvul.onchange = ()=>{ mods.invul=chInvul.checked; modsUsed=true; };
+  chEasy.onchange  = ()=>{ mods.easySpawn=chEasy.checked; modsUsed=true; };
+
+  chSpeed.oninput = ()=>{
+    mods.speedMul = Number(chSpeed.value);
+    chSpeedVal.textContent = mods.speedMul.toFixed(1);
+    if(mods.speedMul !== 1) modsUsed = true;
+  };
+
+  chAddCoin.onclick  = ()=>{ coins += 100; modsUsed=true; };
+  chAddScore.onclick = ()=>{ score += 5000; modsUsed=true; };
+
+  chInstantWin.onclick = ()=>{
+    setWon(true);
+    closeMods();
+  };
+
+  function onColorChange(){
+    theme.bg = colBg.value;
+    theme.lane = colLane.value;
+    theme.player = colPlayer.value;
+    theme.obs = colObs.value;
+    theme.coin = colCoin.value;
+    modsUsed = true;
+  }
+  colBg.oninput = onColorChange;
+  colLane.oninput = onColorChange;
+  colPlayer.oninput = onColorChange;
+  colObs.oninput = onColorChange;
+  colCoin.oninput = onColorChange;
+
+  themeDefault.onclick = ()=> applyTheme(DEFAULT_THEME, true);
+  themeNeon.onclick    = ()=> applyTheme(NEON_THEME, true);
+  themeDark.onclick    = ()=> applyTheme(DARK_THEME, true);
+
+  // === INPUT ===
+  const keys = new Set();
+  onkeydown = (e)=> keys.add(e.key.toLowerCase());
+  onkeyup   = (e)=> keys.delete(e.key.toLowerCase());
+
+  function moveLane(d){
+    if(!running) return;
+    player.lane = Math.max(0,Math.min(2,player.lane+d));
+    player.x = laneX()[player.lane];
+  }
+  function jump(){
+    if(player.onGround && running){
+      player.vy=-15;
+      player.onGround=false;
+    }
+  }
+  function slide(){
+    if(player.onGround && running){
+      player.slideT=26;
+    }
+  }
+
+  // touch swipe
+  let ts=null;
+  canvas.addEventListener("pointerdown",(e)=>{
+    ts={x:e.clientX,y:e.clientY};
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener("pointerup",(e)=>{
+    if(!ts) return;
+    let dx=e.clientX-ts.x;
+    let dy=e.clientY-ts.y;
+
+    if(Math.abs(dx)>35||Math.abs(dy)>35){
+      if(Math.abs(dx)>Math.abs(dy)){
+        moveLane(dx>0?1:-1);
+      }else{
+        dy<0?jump():slide();
+      }
+    }
+    ts=null;
+  });
+
+  // === RESTART ===
+  document.getElementById("restartBtn").onclick = ()=>{
+    running=true;
+    won=false;
+
+    score=0; coins=0;
+    t=0; baseSpeed=6;
+    spawnT=0;
+    obs.length=0;
+    pick.length=0;
+
+    mods.invul=false;
+    mods.speedMul=1;
+    mods.easySpawn=false;
+
+    applyTheme(DEFAULT_THEME, false); // tema reset, hile sayılmasın
+    modsUsed=false;
+
+    resetPlayer();
+    closeMods();
+  };
+
+  // === SPAWN ===
+  function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+  function spawn(){
+    let lane=rand(0,2);
+    let r=Math.random();
+
+    if(r<0.65){
+      let type=Math.random()<0.25?"bar":"block";
+      if(type==="block")
+        obs.push({lane,y:-40,w:44,h:52,type});
+      else
+        obs.push({lane,y:-40,w:62,h:18,type});
+    }else{
+      let c=1+(Math.random()<0.5)+(Math.random()<0.3);
+      for(let i=0;i<c;i++)
+        pick.push({lane,y:-60-i*55,r:12});
+    }
+  }
+
+  // === COLLISION ===
+  function hit(a,b){
+    return a.x<b.x+b.w && a.x+a.w>b.x &&
+           a.y<b.y+b.h && a.y+a.h>b.y;
+  }
+  function dist(ax,ay,bx,by){
+    return Math.hypot(ax-bx,ay-by);
+  }
+
+  function playerRect(){
+    let h=player.slideT>0?32:player.h;
+    return{
+      x:player.x-player.w/2,
+      y:player.slideT>0?groundY()-h:player.y-player.h,
+      w:player.w,
+      h:h
+    };
+  }
+
+  function obRect(o,x){
+    if(o.type==="block")
+      return{x:x-o.w/2,y:o.y-o.h,w:o.w,h:o.h};
+    return{x:x-o.w/2,y:o.y-70,w:o.w,h:o.h};
+  }
+
+  // === UPDATE ===
+  function update(){
+    W = canvas.width; H = canvas.height;
+
+    // key handling (1 press = 1 action)
+    if(keys.has("a")||keys.has("arrowleft"))  { keys.delete("a"); keys.delete("arrowleft");  moveLane(-1); }
+    if(keys.has("d")||keys.has("arrowright")) { keys.delete("d"); keys.delete("arrowright"); moveLane(1); }
+    if(keys.has("w")||keys.has("arrowup"))    { keys.delete("w"); keys.delete("arrowup");    jump(); }
+    if(keys.has("s")||keys.has("arrowdown"))  { keys.delete("s"); keys.delete("arrowdown");  slide(); }
+
+    if(!running){
+      document.getElementById("hud").innerHTML = `Skor: ${score}<br>Coin: ${coins}`;
+      return;
+    }
+
+    t++;
+    baseSpeed=Math.min(14,6+t/600);
+    score++;
+
+    // HİLESİZ 500.000 KAZANMA
+    if(!modsUsed && score>=500000){
+      setWon(false);
+      document.getElementById("hud").innerHTML = `Skor: ${score}<br>Coin: ${coins}`;
+      return;
+    }
+
+    // physics
+    player.vy+=0.75;
+    player.y+=player.vy;
+    if(player.y>=groundY()){
+      player.y=groundY();
+      player.vy=0;
+      player.onGround=true;
+    }
+    if(player.slideT>0) player.slideT--;
+
+    const realSpeed=baseSpeed*mods.speedMul;
+
+    spawnT--;
+    if(spawnT<=0){
+      spawn();
+      let base=Math.max(25,70-baseSpeed*3);
+      if(mods.easySpawn) base*=1.6;
+      spawnT=base;
+    }
+
+    obs.forEach(o=>o.y+=realSpeed);
+    pick.forEach(c=>c.y+=realSpeed);
+
+    while(obs.length&&obs[0].y>H+120) obs.shift();
+    while(pick.length&&pick[0].y>H+120) pick.shift();
+
+    const pr=playerRect();
+
+    // coin pickup
+    for(let i=pick.length-1;i>=0;i--){
+      const c=pick[i];
+      const cx=laneX()[c.lane];
+      const cy=c.y;
+      if(dist(cx,cy,pr.x+pr.w/2,pr.y+pr.h/2)<c.r+20){
+        pick.splice(i,1);
+        coins++;
+        score+=40;
+      }
+    }
+
+    // obstacle hit
+    if(!mods.invul){
+      for(const o of obs){
+        const ox=laneX()[o.lane];
+        if(hit(pr,obRect(o,ox))){
+          running=false;
+          won=false;
+          break;
+        }
+      }
+    }
+
+    document.getElementById("hud").innerHTML = `Skor: ${score}<br>Coin: ${coins}`;
+  }
+
+  // === DRAW ===
+  function circle(x,y,r){
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // bg
+    ctx.fillStyle=theme.bg;
+    ctx.fillRect(0,0,W,H);
+
+    // lane lines
+    ctx.strokeStyle=theme.lane;
+    ctx.globalAlpha=0.35;
+    ctx.lineWidth=2;
+    ctx.setLineDash([12,12]);
+    [W*0.39,W*0.61].forEach(x=>{
+      ctx.beginPath();
+      ctx.moveTo(x,0);
+      ctx.lineTo(x,H);
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.globalAlpha=1;
+
+    // coins
+    pick.forEach(c=>{
+      const x=laneX()[c.lane];
+      ctx.fillStyle=theme.coin;
+      circle(x,c.y,c.r);
+    });
+
+    // obstacles
+    obs.forEach(o=>{
+      const x=laneX()[o.lane];
+      ctx.fillStyle=theme.obs;
+      const r=obRect(o,x);
+      roundRect(r.x,r.y,r.w,r.h,10);
+    });
+
+    // player
+    const p=playerRect();
+    ctx.fillStyle=theme.player;
+    roundRect(p.x,p.y,p.w,p.h,10);
+
+    // YOU WON / GAME OVER
+    if(!running){
+      ctx.globalAlpha=0.85;
+      ctx.fillStyle="#000";
+      ctx.fillRect(0,0,W,H);
+      ctx.globalAlpha=1;
+
+      ctx.fillStyle="#fff";
+      ctx.textAlign="center";
+      ctx.font="900 42px system-ui";
+      ctx.fillText(won?"YOU WON":"GAME OVER",W/2,H/2);
+
+      ctx.font="700 18px system-ui";
+      ctx.fillText("Yeniden için sağ üst 'Yeniden'",W/2,H/2+38);
+      ctx.textAlign="start";
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  function loop(){
+    update();
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+  draw();
+})();
+</script>
+</body>
+</html>
